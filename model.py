@@ -1,49 +1,22 @@
-# wip since not fine-tuned yet
-
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer # huggingface gives u access to FLAN-T5 and BERT/BART family
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 import torch
 
-model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-small") # small so gpu doesnt explode
-tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small", use_fast = True)
+model_name = 'google/flan-t5-large'
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast = True)
 
-prompt = input("How may I help you today? ")
-
-def completion(prompt): # generates completions given a prompt
+def completion(prompt):
 
     inputs = tokenizer(prompt, return_tensors = "pt")
     outputs = model.generate(**inputs)
     completion = (tokenizer.batch_decode(outputs, skip_special_tokens = True))
+    return completion[0]
 
-    return completion
-
-def generateEmb(query): # encodes a query and generates embeddings
-
+def generateEmb(query):
     inputs = tokenizer(query, return_tensors = "pt")
 
-    with torch.no_grad(): # just the encodings
-
+    with torch.no_grad():
         encoder_outputs = model.get_encoder()(**inputs)
-    
+
     encoder_embeddings = encoder_outputs.last_hidden_state
-
     return encoder_embeddings
-
-embeddings = generateEmb(prompt)
-
-print(embeddings)
-
-# :) ???
-
-#def generate(query): # full encoder/decoder function
-
-#    inputs = tokenizer(query, return_tensors = "pt")
-#    outputs = model.generate(**inputs)
-#    completion = (tokenizer.batch_decode(outputs, skip_special_tokens = True))
-
-#    with torch.no_grad(): # to isolate encodings
-
-#        encoder_outputs = model.get_encoder()(**inputs)
-    
-#    encoder_embeddings = encoder_outputs.last_hidden_state
-
-#    return completion, encoder_embeddings # double return statement, where encoder_embeddings is the input in vector form
