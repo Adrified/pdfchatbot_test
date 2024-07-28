@@ -1,35 +1,18 @@
-# wip
-
 from flask import Flask, request, jsonify
-
-# for cross-file compatibility 
-
-from pdf_extraction import pdf_extractor
-from model import generateEmb, completion
-from vector_storage import storeEmb, queryEmb
-from config import get_key
+from flask_cors import CORS
+from model import completion
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route('/upload', methods=['POST'])
-def upload_pdf(): # backend upload pdf
-
-    file = request.files['file']
-    text = pdf_extractor(file)
-    embeddings = generateEmb(text)
-    document_id = storeEmb(embeddings, text)
-
-    return jsonify({"document_id": document_id})
-
-@app.route('/query', methods=['POST'])
-def query(): # backend query
-    
+@app.route('/chat', methods=['POST'])
+def chat():
     data = request.json
-    query_text = data.get('query')
-    query_embeddings = generateEmb(query_text)
-    result = queryEmb(query_embeddings)
+    user_message = data.get('message', '')
 
-    return jsonify(result)
+    bot_response = completion(user_message)
+
+    return jsonify({'response': bot_response})
 
 if __name__ == '__main__':
-    app.run(port=5000)
+    app.run(debug=True)
