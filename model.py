@@ -1,22 +1,47 @@
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoModelForQuestionAnswering, AutoTokenizer
 import torch
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.documents import Document
+from typing import Union
 
-model_name = 'google/flan-t5-large'
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast = True)
+class document_model:
 
-def completion(prompt):
+    def __init__ (self):
 
-    inputs = tokenizer(prompt, return_tensors = "pt")
-    outputs = model.generate(**inputs)
-    completion = (tokenizer.batch_decode(outputs, skip_special_tokens = True))
-    return completion[0]
+        model_name = 'deepset/roberta-base-squad2'
+        self.model = AutoModelForQuestionAnswering.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-def generateEmb(query):
-    inputs = tokenizer(query, return_tensors = "pt")
+    def answer(self, prompt: str, context: Union[str, Document]) -> str:
 
-    with torch.no_grad():
-        encoder_outputs = model.get_encoder()(**inputs)
+        if type(context) == str:
+            inputs = self.tokenizer(prompt, context, return_tensors = 'pt')
 
-    encoder_embeddings = encoder_outputs.last_hidden_state
-    return encoder_embeddings
+        elif type(context) == Document:
+        
+            loader = PyPDFLoader(
+                context
+            )
+            pages = loader.load_and_split()
+            text = ""
+            for i in range(len(pages)):
+                text += pages[i].page_content + "\n\n"
+            
+            inputs = self.tokenizer(prompt, text, return_tensors = 'pt')
+
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+
+        i = outputs.start_logits.argmax()
+        j = outputs.end_logits.argmax()
+                
+        tokens = inputs['input_ids'][0][i:j+1]
+        completion = self.tokenizer.decode(tokens)
+
+        return completion
+
+    def tokenize(self, query: str) -> torch.Tensor:
+
+        inputs = self.tokenizer(query, return_tensors = 'pt')
+        encoded_embeddings = self.model(**inputs)
+        return encoded_embeddings
