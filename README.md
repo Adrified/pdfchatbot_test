@@ -8,8 +8,4 @@ To use, initialize a `document_model` object and implementation is self-explanat
 
 ### Progress:
 
-Frontend ❌
-Backend ✅
-AI Integration ✅
-PDF Parsing ✅
-Vector Database w/ API ❌
+Frontend ❌ | Backend ✅ | AI Integration ✅ | PDF Parsing ✅ |Vector Database w/ API ❌
